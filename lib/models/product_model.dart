@@ -22,7 +22,7 @@ final List<Product> products = [
     category: 'Sneakers',
   ),
   Product(
-    name: 'New Balance 530 Abzorb',
+    name: 'New Balance 530',
     price: '10000.0',
     status: 'Out of Stock',
     image: 'assets/images/shoes2.jpg',

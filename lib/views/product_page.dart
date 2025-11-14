@@ -165,9 +165,14 @@ Widget _buildProductCard(Product product) {
             ),
           ),
           Expanded(
-            child: Image.asset(
-              product.image,
-              fit: BoxFit.contain,
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: 1.2,
+                child: Image.asset(
+                  product.image,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
