@@ -1,5 +1,9 @@
 import '../models/product_model.dart';
 import 'package:flutter/material.dart';
+import 'cart_page.dart';
+import 'checkout_page.dart';
+import 'orders_page.dart';
+import '../models/order_model.dart';
 
 class ProductPage extends StatefulWidget {
   const ProductPage({super.key});
@@ -12,6 +16,8 @@ class _ProductPageState extends State<ProductPage> {
   int selectedIndex = 0;
   int currentNavIndex = 0;
   Set<Product> favoriteProducts = {};
+  List<CartItem> cartItems = [];
+  List<Order> orders = [];
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +26,55 @@ class _ProductPageState extends State<ProductPage> {
         title: const Text("Task 8 - Mayugba"),
         centerTitle: true,
         backgroundColor: Colors.lightBlue,
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () {
+                  setState(() {
+                    currentNavIndex = 2;
+                  });
+                },
+              ),
+              if (cartItems.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      '${cartItems.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: currentNavIndex == 0 ? _buildHome() : _buildFavorites(),
+        child: currentNavIndex == 0
+            ? _buildHome()
+            : currentNavIndex == 1
+                ? _buildFavorites()
+                : currentNavIndex == 2
+                    ? _buildCart()
+                    : _buildOrders(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentNavIndex,
@@ -37,6 +88,8 @@ class _ProductPageState extends State<ProductPage> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favorites"),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt), label: "Orders"),
         ],
       ),
     );
@@ -96,7 +149,7 @@ Widget _buildProductGrid() {
       return _buildProductCard(product);
     },
   );
-}
+} 
 
 Widget _categoryButton(String title, int index) {
   return ElevatedButton(
@@ -132,6 +185,42 @@ Widget _buildFavorites() {
       return _buildProductCard(product);
     },
   );
+}
+
+Widget _buildCart() {
+  return CartPage(
+    cartItems: cartItems,
+    onRemoveItem: (cartItem) {
+      setState(() {
+        cartItems.remove(cartItem);
+      });
+    },
+    onUpdateQuantity: (cartItem, newQuantity) {
+      setState(() {
+        cartItem.quantity = newQuantity;
+      });
+    },
+    onCheckout: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CheckoutPage(
+            cartItems: cartItems,
+            onConfirmOrder: (order) {
+              setState(() {
+                orders.add(order);
+                cartItems.clear();
+              });
+            },
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildOrders() {
+  return OrdersPage(orders: orders);
 }
 Widget _buildProductCard(Product product) {
   final isFavorited = favoriteProducts.contains(product);
@@ -191,15 +280,53 @@ Widget _buildProductCard(Product product) {
             ),
           ),
           Text(
-            '\$${product.price}',
+            '₱${product.price}',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              onPressed: () {
+                setState(() {
+                  final existingItem = cartItems.firstWhere(
+                    (item) => item.product == product,
+                    orElse: () => CartItem(product: product),
+                  );
+                  
+                  if (cartItems.contains(existingItem)) {
+                    existingItem.quantity++;
+                  } else {
+                    cartItems.add(existingItem);
+                  }
+                });
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${product.name} added to cart!'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: const Text(
+                'Add to Cart',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
       ),
     ),
   );
-  }
+}
 }
